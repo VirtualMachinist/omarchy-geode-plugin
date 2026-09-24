@@ -52,11 +52,25 @@ Item {
         // Set by rerun(): Model.listArgs(vaultPath) — human verb + vault
         // path + --output json. No token flag, no token env of any kind.
         command: []
+
+        // Collect stdout; it is read in onExited only — never refreshed
+        // from here (Process has no exitCode property).
         stdout: StdioCollector {
-            onStreamFinished: root.refresh(geodeRun.exitCode, this.text)
+            id: collector
         }
+
+        // The single fold point: exit code + the collector text. Exit 0
+        // with JSON keeps ok:true.
         onExited: function (code) {
-            root.refresh(code, "");
+            root.refresh(code, collector.text);
+        }
+
+        // A missing `geode` binary is QProcess.FailedToStart: no `exited`
+        // fires, so a set vault path would stay on the empty-vault status.
+        // 127 is the not-found code; Model turns it into the
+        // missing-binary reason.
+        onFailedToStart: {
+            root.status = Model.statusFromRun(127, "", "");
         }
     }
 
