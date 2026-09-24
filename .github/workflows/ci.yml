@@ -1,0 +1,42 @@
+# omarchy-geode-plugin CI (G0)
+#
+# ubuntu-latest only. Runs tests/ when that directory exists; a tree
+# without tests/ passes. Does not install Omarchy and does not need
+# /dev/fuse — this plugin is a shell/QML wrapper, not a FUSE consumer.
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect tests/
+        id: detect
+        run: |
+          if [ -d tests ] && [ -n "$(ls -A tests 2>/dev/null)" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run tests
+        if: steps.detect.outputs.present == 'true'
+        run: |
+          set -e
+          # Backend owns tests/ (G2). Shell-based contract tests fail the
+          # tree on red-line strings in Model.js, BarWidget.qml,
+          # manifest.json, or README.md.
+          for t in tests/*.sh; do
+            [ -e "$t" ] || continue
+            echo "running $t"
+            bash "$t"
+          done
+
+      - name: No tests yet — pass
+        if: steps.detect.outputs.present == 'false'
+        run: echo "no tests/ directory; nothing to run (G0 tree)"
