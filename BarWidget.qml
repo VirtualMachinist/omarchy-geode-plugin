@@ -24,12 +24,6 @@ Item {
     // assigns vaultPath directly. The manifest schema key is vaultPath.
     property var settings: ({})
 
-    // Derived from settings.vaultPath (schema key). Empty/missing keeps
-    // the empty-vault failed status.
-    readonly property string vaultPath:
-        (settings && typeof settings.vaultPath === "string")
-        ? settings.vaultPath : ""
-
     // Status from Model.js. Starts as the empty-vault failed status;
     // a run only replaces it when a vault path is set.
     property var status: Model.statusForEmptyVault()
@@ -37,17 +31,27 @@ Item {
     implicitWidth: row.implicitWidth + 16
     implicitHeight: 22
 
+    // Live settings read. The vaultPath binding may not have flushed when
+    // onSettingsChanged fires (injectProps assigns settings first), so
+    // rerun()/refresh()/the click read settings.vaultPath directly — never
+    // the property.
+    function vaultPathNow() {
+        return (settings && typeof settings.vaultPath === "string")
+               ? settings.vaultPath : "";
+    }
+
     // Fold a finished run into the bar status via Model.js.
     function refresh(code, stdout) {
-        status = Model.statusFor(vaultPath, code, stdout, "");
+        status = Model.statusFor(vaultPathNow(), code, stdout, "");
     }
 
     function rerun() {
-        if (!Model.hasVault(vaultPath)) {
+        var vault = vaultPathNow();
+        if (!Model.hasVault(vault)) {
             status = Model.statusForEmptyVault();
             return;
         }
-        geodeRun.command = Model.listArgs(vaultPath);
+        geodeRun.command = Model.listArgs(vault);
         geodeRun.running = true;
         // A missing `geode` binary never emits `exited`: the run stays
         // running=false (pid null). That is the failed-to-start shape on
@@ -112,7 +116,7 @@ Item {
             }
             // Token-free launch: `geode tui` + vault path only. Never
             // `--token`; never any agent-plane or mutating verb from chrome.
-            Quickshell.execDetached(["geode", "tui", root.vaultPath]);
+            Quickshell.execDetached(["geode", "tui", root.vaultPathNow()]);
         }
     }
 }
