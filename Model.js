@@ -5,7 +5,7 @@
 //
 // Command: a human verb + the vault path + `--output json`.
 //
-// Red lines (SPEC-omarchy G0): no `--token`, no `GEODE_TOKEN` written by
+// Red lines (SPEC-omarchy G0): no token flag, no token environment
 // the plugin, and none of the agent/token/serve/seal/open/mount verbs.
 // Missing binary (exit 127) and an empty vault path are a failed status
 // object the bar can show — never a throw, never an empty success.
@@ -16,7 +16,7 @@ function pluginId() {
 }
 
 // The exact argv for a status listing. Human verb + vault + JSON output.
-// Nothing else — no --token, no GEODE_TOKEN, no key material.
+// Nothing else — no token flag, no token environment, no key material.
 function listArgs(vaultPath) {
     return ["geode", "list", vaultPath, "--output", "json"];
 }
