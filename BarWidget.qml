@@ -19,8 +19,16 @@ import "Model.js" as Model
 Item {
     id: root
 
-    // Widget setting (manifest barWidget.schema): absolute vault path.
-    property string vaultPath: ""
+    // Host settings. Lathe Bar.qml injectProps assigns `target.settings =
+    // moduleSettings` when the widget declares this property — it never
+    // assigns vaultPath directly. The manifest schema key is vaultPath.
+    property var settings: ({})
+
+    // Derived from settings.vaultPath (schema key). Empty/missing keeps
+    // the empty-vault failed status.
+    readonly property string vaultPath:
+        (settings && typeof settings.vaultPath === "string")
+        ? settings.vaultPath : ""
 
     // Status from Model.js. Starts as the empty-vault failed status;
     // a run only replaces it when a vault path is set.
@@ -51,7 +59,7 @@ Item {
         }
     }
 
-    onVaultPathChanged: rerun()
+    onSettingsChanged: rerun()
     Component.onCompleted: rerun()
 
     Process {
