@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "virtualmachinist.geode",
+  "name": "Geode",
+  "version": "0.1.0",
+  "author": "VirtualMachinist",
+  "license": "MIT",
+  "description": "Sealed-vault status for Geode on the Omarchy bar.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Geode",
+    "category": "Development",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "schema": [{ "key": "vaultPath", "type": "string", "label": "Vault path", "defaultValue": "" }]
+  }
+}
