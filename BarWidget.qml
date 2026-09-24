@@ -41,6 +41,14 @@ Item {
         }
         geodeRun.command = Model.listArgs(vaultPath);
         geodeRun.running = true;
+        // A missing `geode` binary never emits `exited`: the run stays
+        // running=false (pid null). That is the failed-to-start shape on
+        // Quickshell 0.3.0. 127 is
+        // the not-found code; Model turns it into the missing-binary
+        // reason instead of leaving the empty-vault status up.
+        if (!geodeRun.running) {
+            status = Model.statusFromRun(127, "", "");
+        }
     }
 
     onVaultPathChanged: rerun()
@@ -60,17 +68,10 @@ Item {
         }
 
         // The single fold point: exit code + the collector text. Exit 0
-        // with JSON keeps ok:true.
+        // with JSON keeps ok:true. Missing-binary runs never reach here
+        // (no `exited` fires); rerun() catches those via the running flag.
         onExited: function (code) {
             root.refresh(code, collector.text);
-        }
-
-        // A missing `geode` binary is QProcess.FailedToStart: no `exited`
-        // fires, so a set vault path would stay on the empty-vault status.
-        // 127 is the not-found code; Model turns it into the
-        // missing-binary reason.
-        onFailedToStart: {
-            root.status = Model.statusFromRun(127, "", "");
         }
     }
 
