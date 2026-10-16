@@ -1,6 +1,6 @@
 # omarchy-geode-plugin
 
-Omarchy shell plugin for [Geode](https://github.com/Hedronite/geode) 1.0.0. Status bar only. QML owns chrome. The `geode` CLI owns data.
+Omarchy shell plugin for [Geode](https://github.com/Hedronite/geode) 1.2.1. Status bar only. QML owns chrome. The `geode` CLI owns data.
 
 Plugin id: `virtualmachinist.geode`. Kind: `bar-widget` only. No service. No install hooks.
 
@@ -9,7 +9,7 @@ Plugin id: `virtualmachinist.geode`. Kind: `bar-widget` only. No service. No ins
 Install the binary first, on Omarchy Linux — the plugin does **not** install it:
 
 ```sh
-cargo install geode-cli --version 1.0.0
+cargo install geode-cli --version 1.2.1
 omarchy plugin add https://github.com/VirtualMachinist/omarchy-geode-plugin.git --enable
 ```
 
@@ -26,5 +26,3 @@ Then set the vault path in the bar widget's settings. The plugin reads no vault 
 - **No agent plane.** No agent socket, no MCP from QML — the agent plane stays out of Omarchy chrome.
 - **No install hooks.** The installer never runs plugin code, never sudo, never pacman. Binary install is the separate `cargo install` step above.
 - QML calls only human verbs (`list`, `tui`) — never any agent-plane or mutating vault verb.
-
-The foundry pack is `foundry/geode` slug `omarchy` in the Atrium vault.
