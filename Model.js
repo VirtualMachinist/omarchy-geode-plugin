@@ -55,7 +55,7 @@ function statusFromRun(code, stdout, stderr) {
     if (code === 127) {
         return {
             ok: false,
-            reason: "geode not found — install it with: cargo install geode-cli --version 1.0.0",
+            reason: "geode not found — install it with: cargo install geode-cli --version 1.2.1",
             vault: "",
             entries: [],
             raw: out
