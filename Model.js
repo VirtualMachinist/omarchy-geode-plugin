@@ -44,9 +44,15 @@ function statusForEmptyVault() {
 //   stderr  — captured stderr
 //
 // Returns:
-//   { ok: true,  vault, entries, raw }   — stdout was valid JSON
-//   { ok: false, reason, ... }           — non-zero exit, exit 127, or
-//                                          stdout was not JSON
+//   { ok: true,  vault, entries, raw }   — exit 0, stdout parsed, and the
+//                                          summary document says ok:true
+//   { ok: false, reason, ... }           — non-zero exit, exit 127, stdout
+//                                          not JSON, or no ok:true summary
+//
+// stdout is either one JSON document (older geode) or newline-delimited
+// geode.event.v1 documents (geode 1.2.x): one per entry carrying `path`,
+// then a summary carrying `files`, which is a count. `entries` is always an
+// array of path strings; the `files` count is never stored in it.
 // Never throws. Never returns ok:true without parsed JSON.
 function statusFromRun(code, stdout, stderr) {
     var out = typeof stdout === "string" ? stdout : "";
@@ -75,13 +81,8 @@ function statusFromRun(code, stdout, stderr) {
         };
     }
 
-    var doc = null;
-    try {
-        doc = JSON.parse(out);
-    } catch (e) {
-        doc = null;
-    }
-    if (doc === null || typeof doc !== "object") {
+    var docs = parseDocs(out);
+    if (docs === null) {
         return {
             ok: false,
             reason: "geode list printed unparsable JSON",
@@ -92,10 +93,34 @@ function statusFromRun(code, stdout, stderr) {
     }
 
     var entries = [];
-    if (doc.entries && doc.entries.length !== undefined) {
-        entries = doc.entries;
-    } else if (doc.files !== undefined) {
-        entries = doc.files;
+    var summary = null;
+    for (var i = 0; i < docs.length; i++) {
+        var doc = docs[i];
+        if (typeof doc.path === "string") {
+            entries.push(doc.path);
+            continue;
+        }
+        if (Array.isArray(doc.entries)) {
+            for (var j = 0; j < doc.entries.length; j++) {
+                var e = doc.entries[j];
+                if (typeof e === "string") {
+                    entries.push(e);
+                } else if (e !== null && typeof e === "object" && typeof e.path === "string") {
+                    entries.push(e.path);
+                }
+            }
+        }
+        summary = doc;
+    }
+
+    if (summary === null || summary.ok !== true) {
+        return {
+            ok: false,
+            reason: "geode list printed no ok summary",
+            vault: "",
+            entries: [],
+            raw: out
+        };
     }
 
     return {
@@ -118,6 +143,43 @@ function statusFor(vaultPath, code, stdout, stderr) {
 }
 
 // ---- helpers ------------------------------------------------------------
+
+// JSON objects in `out`: the whole text as one document if it parses,
+// otherwise one per non-empty line. null when nothing parses, or when any
+// line is not a JSON object.
+function parseDocs(out) {
+    var whole = tryParse(out);
+    if (whole !== null) {
+        return [whole];
+    }
+    var lines = String(out).split(/\r?\n/);
+    var docs = [];
+    for (var i = 0; i < lines.length; i++) {
+        if (lines[i].trim() === "") {
+            continue;
+        }
+        var doc = tryParse(lines[i]);
+        if (doc === null) {
+            return null;
+        }
+        docs.push(doc);
+    }
+    return docs.length === 0 ? null : docs;
+}
+
+// One JSON object, or null. Arrays and scalars are not status documents.
+function tryParse(text) {
+    var doc = null;
+    try {
+        doc = JSON.parse(text);
+    } catch (e) {
+        return null;
+    }
+    if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+        return null;
+    }
+    return doc;
+}
 
 function firstLine(s) {
     var str = String(s);
